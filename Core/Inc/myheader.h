@@ -18,14 +18,15 @@
 #include "stdio.h"
 
 
+
 //Header function
-float_t hts221_compute_hummidity(int16_t H_T_OUT, uint8_t H0_rH, uint8_t H1_rH, int16_t H0_T0_OUT, int16_t H1_T0_OUT);
 void uart_send_string_DMA(char* string, int16_t length);
 //void uart_send_num_DMA(int16_t* string, int16_t length);
+float_t hts221_compute_hummidity(int16_t H_T_OUT, uint8_t H0_rH, uint8_t H1_rH, int16_t H0_T0_OUT, int16_t H1_T0_OUT);
 float_t lsm303agr_from_lsb_nm_to_celsius(int16_t lsb);
 float_t hts221_compute_temp(int16_t T_OUT, int16_t T0_OUT, int16_t T1_OUT, int16_t T0_degC, int16_t T1_degC);
-
 float_t scale_acce_8g(int16_t data);
+
 //HTS221
 #define HTS221_mask_read (0x80) // 1 MSB
 
@@ -75,11 +76,11 @@ float_t scale_acce_8g(int16_t data);
 #define LSM6DSL_OUTY_L_XL (0x2A) //0b00101010
 #define LSM6DSL_OUTY_H_XL (0x2B) //0b00101011
 #define LSM6DSL_OUTZ_L_XL (0x2C) //0b00101100
-//#define LSM6DSL_OUTZ_H_XL (0x2D) //0b00101101
+#define LSM6DSL_OUTZ_H_XL (0x2D) //0b00101101
 
 
 //LSM303AGR
-#define LSM303AGR_mask_read (0x80) // 1 MSB
+#define LSM303AGR_mask_read (0x80) // 1 MSB to increment
 
 #define LSM303AGR_OUT_TEMP_L_A (0x0C | LSM303AGR_mask_read)
 

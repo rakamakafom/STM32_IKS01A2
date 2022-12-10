@@ -72,32 +72,18 @@ int16_t HTTS221_H0_T0_OUT = 0;
 int16_t HTTS221_H1_T0_OUT = 0;
 
 
-
-
-
-
 //LSM6DSL
 uint8_t LSM6DSL_CTRL1_XL=(0b01001110);
 uint8_t LSM6DSL_GYRRO_CTRL2_G_sett=(0b01001000);
 uint8_t LSM6DSL_WHOAMI_buf = 0;
-int16_t LSM6DSL_DATA_BUFOR[3];
+uint8_t UART_BUFFOR[50];
 
-/*
-uint8_t LSM6DSL_DATA_ACCEX_buff[2];
-uint8_t LSM6DSL_DATA_ACCEY_buff[2];
-uint8_t LSM6DSL_DATA_ACCEZ_buff[2];
-
-int16_t LSM6DSL_OUTX_ACCE_buff = 0;
-int16_t LSM6DSL_OUTY_ACCE_buff = 0;
-int16_t LSM6DSL_OUTZ_ACCE_buff = 0;
-*/
 
 //LSM303AGR
 
 uint8_t LSM303AGR_ACCE_WHOAMI_buff = 0;
 uint8_t LSM303AGR_GYRO_WHOAMI_buff = 0;
 
-//uint8_t LSM303AGR_CTRL_REG1_A_settings = 0b01000111;
 uint8_t LSM303AGR_CTRL_REG1_A_settings = 0x57;
 uint8_t LSM303AGR_CTRL_REG2_A_settings = 0x00;
 uint8_t LSM303AGR_CTRL_REG3_A_settings = 0x00;
@@ -106,13 +92,12 @@ uint8_t LSM303AGR_TEMP_CFG_REG_A_settings = 0xC0;
 
 uint8_t LSM303AGR_DATA_ACCE_buff[6];
 
-//uint8_t LSM303AGR_OUTX_L_XL_buf = 0;
-//uint8_t LSM303AGR_OUTX_H_XL_buf = 0;
 //LPS22HB
 
 uint8_t LPS22HB_WHOAMI_buf = 0;
 uint8_t LPS22HB_CTRL_REG1_A_settings = 0b00111000;
 
+int8_t sizeuart = 0;
 
 /* USER CODE END PV */
 
@@ -234,8 +219,8 @@ int main(void)
       HAL_I2C_Mem_Read_IT(&hi2c1, LSM303AGR_ADR_ACCE, LSM303AGR_OUT_X_L_A, 1, LSM303AGR_DATA_ACCE_buff, 6);
 
       //START UART_DMA
-      HAL_UART_Transmit_DMA(&huart2, (uint8_t*) LSM6DSL_DATA_BUFOR, 6);
-      //uart_send_string_DMA(LSM6DSL_DATA_BUFOR, 6); //test
+      HAL_UART_Transmit_DMA(&huart2, (uint8_t*) UART_BUFFOR, 50);
+      //uart_send_string_DMA( (char*) UART_BUFFOR, 50); //test
       //uart_send_string_DMA((char*) "HELLO", 50);   //test
 
 

@@ -7,6 +7,7 @@
 
 #include "myheader.h"
 #include "lcd_i2c.h"
+
 extern UART_HandleTypeDef huart2;
 extern I2C_HandleTypeDef hi2c1;
 extern DMA_HandleTypeDef hdma_usart2_tx;
@@ -20,6 +21,9 @@ extern uint8_t LSM303AGR_DATA_ACCE_buff[6];
 int16_t LSM303AGR_OUTX_ACCE_buf = 0;
 int16_t LSM303AGR_OUTY_ACCE_buf = 0;
 int16_t LSM303AGR_OUTZ_ACCE_buf = 0;
+float_t LSM303AGR_OUTX_ACCE_in_g = 0;
+float_t LSM303AGR_OUTY_ACCE_in_g = 0;
+float_t LSM303AGR_OUTZ_ACCE_in_g = 0;
 
 //TEMP
 int16_t LSM303AGR_OUT_TEMP_data = 0;
@@ -33,7 +37,7 @@ int16_t LSM303AGR_OUTZ_GYRRO_buf = 0;
 
 
 //LSM6DSL
-extern int16_t LSM6DSL_DATA_BUFOR[3];
+extern uint8_t UART_BUFFOR[50];
 uint8_t LSM6DSL_DATA_ACCE_buff[6];
 
 int16_t LSM6DSL_OUTX_ACCE_buff = 0;
@@ -89,22 +93,20 @@ extern int16_t HTTS221_H1_T0_OUT;
 
 float HTS221_TEMP_DATA_IN_C = 0;
 float HTS221_HUMI_DATA_IN_PER = 0;
+
+extern int8_t sizeuart;
 /* USER CODE END PV */
 
 
 void uart_send_string_DMA(char* string, int16_t length)
 {
-
 	HAL_UART_Transmit_DMA(&huart2, (uint8_t*) string, length);
-
 
 }
 //void uart_send_num_DMA(int16_t* string, int16_t length)
 //{
-//
-//	HAL_UART_Transmit_DMA(&huart2, (int16_t*) string, length);
-//
-//
+//	HAL_UART_Transmit_DMA(&huart2, (uint8_t*) string, length);
+
 //}
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
@@ -114,9 +116,11 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
 		LSM303AGR_OUTX_ACCE_buf = (LSM303AGR_DATA_ACCE_buff[1] << 8) + LSM303AGR_DATA_ACCE_buff[0];
 		LSM303AGR_OUTY_ACCE_buf = (LSM303AGR_DATA_ACCE_buff[3] << 8) + LSM303AGR_DATA_ACCE_buff[2];
 		LSM303AGR_OUTZ_ACCE_buf = (LSM303AGR_DATA_ACCE_buff[5] << 8) + LSM303AGR_DATA_ACCE_buff[4];
+		LSM303AGR_OUTX_ACCE_in_g = scale_acce_8g(LSM303AGR_OUTX_ACCE_buf);
+		LSM303AGR_OUTY_ACCE_in_g = scale_acce_8g(LSM303AGR_OUTY_ACCE_buf);
+		LSM303AGR_OUTZ_ACCE_in_g = scale_acce_8g(LSM303AGR_OUTZ_ACCE_buf);
 		Call_Back_Flag = 1;
 		HAL_I2C_Mem_Read_IT(&hi2c1, LSM6DSL_ADR, LSM6DSL_OUTX_L_XL, 1, LSM6DSL_DATA_ACCE_buff, 6);
-
 	}
 	//ACCE LSM6DSL
 	else if(Call_Back_Flag == 1){
@@ -126,10 +130,10 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
 		LSM6DSL_OUTX_ACCE_in_g = scale_acce_8g(LSM6DSL_OUTX_ACCE_buff);
 		LSM6DSL_OUTY_ACCE_in_g = scale_acce_8g(LSM6DSL_OUTY_ACCE_buff);
 		LSM6DSL_OUTZ_ACCE_in_g = scale_acce_8g(LSM6DSL_OUTZ_ACCE_buff);
-		//sprintf( (char*) LSM6DSL_DATA_BUFOR, "%f %f %f\n", LSM6DSL_OUTX_ACCE_in_g, LSM6DSL_OUTY_ACCE_in_g, LSM6DSL_OUTZ_ACCE_in_g);
-		LSM6DSL_DATA_BUFOR[0] = LSM6DSL_OUTX_ACCE_buff;
-		LSM6DSL_DATA_BUFOR[1] = LSM6DSL_OUTY_ACCE_buff;
-		LSM6DSL_DATA_BUFOR[2] = LSM6DSL_OUTZ_ACCE_buff;
+		sprintf((char*) UART_BUFFOR, "FFF%6.4f %6.4f %6.4f \n\r", LSM6DSL_OUTX_ACCE_in_g, LSM6DSL_OUTX_ACCE_in_g, LSM6DSL_OUTX_ACCE_in_g);
+		//LSM6DSL_DATA_BUFOR[0] = LSM6DSL_OUTX_ACCE_buff;
+		//LSM6DSL_DATA_BUFOR[1] = LSM6DSL_OUTY_ACCE_buff;
+		//LSM6DSL_DATA_BUFOR[2] = LSM6DSL_OUTZ_ACCE_buff;
 		Call_Back_Flag = 2;
 		HAL_I2C_Mem_Read_IT(&hi2c1, LPS22HB_ADR, LPS22HB_PRESS_OUT_XL, 1, LPS22HB_DATA_buff, 5);
 	}
@@ -188,13 +192,13 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
 float_t hts221_compute_temp(int16_t T_OUT, int16_t T0_OUT, int16_t T1_OUT, int16_t T0_degC, int16_t T1_degC)
 {
 
-		float_t val1 = 0, val2 = 0, val3 = 0, val_total = 0;
-		val1 = (float_t) ( T1_degC - T0_degC );
-		val2 = (float_t) ( T_OUT - T0_OUT );
-		val3 = (float_t) ( T1_OUT - T0_OUT );
-		val_total = ((val1 * val2) / (val3)) + T0_degC;
+	float_t val1 = 0, val2 = 0, val3 = 0, val_total = 0;
+	val1 = (float_t) ( T1_degC - T0_degC );
+	val2 = (float_t) ( T_OUT - T0_OUT );
+	val3 = (float_t) ( T1_OUT - T0_OUT );
+	val_total = ((val1 * val2) / (val3)) + T0_degC;
 
-		return val_total;
+	return val_total;
 
 }
 
@@ -213,11 +217,12 @@ float_t hts221_compute_hummidity(int16_t H_T_OUT, uint8_t H0_rH, uint8_t H1_rH, 
 
 float_t lsm303agr_from_lsb_nm_to_celsius(int16_t lsb)
 {
-  return ( ( (float_t)lsb / 64.0f ) / 4.0f ) + 25.0f;
+	return ( ( (float_t)lsb / 64.0f ) / 4.0f ) + 25.0f;
 }
 
 float_t scale_acce_8g(int16_t data)
 {
 	return ((float_t) data * (float_t) 8)/ (float_t) 32768;
 }
+
 
