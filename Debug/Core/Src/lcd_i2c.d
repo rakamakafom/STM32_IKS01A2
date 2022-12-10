@@ -1,4 +1,4 @@
-Core/Src/myfun.o: ../Core/Src/myfun.c ../Core/Inc/myheader.h \
+Core/Src/lcd_i2c.o: ../Core/Src/lcd_i2c.c ../Core/Inc/lcd_i2c.h \
  ../Core/Inc/main.h ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -29,8 +29,8 @@ Core/Src/myfun.o: ../Core/Src/myfun.c ../Core/Inc/myheader.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rtc.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rtc_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/lcd_i2c.h
-../Core/Inc/myheader.h:
+ ../Core/Inc/main.h
+../Core/Inc/lcd_i2c.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -62,4 +62,4 @@ Core/Src/myfun.o: ../Core/Src/myfun.c ../Core/Inc/myheader.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rtc.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rtc_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Inc/lcd_i2c.h:
+../Core/Inc/main.h:

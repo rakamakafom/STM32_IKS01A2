@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "myheader.h"
+#include "lcd_i2c.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,22 +50,37 @@ DMA_HandleTypeDef hdma_usart2_tx;
 /* USER CODE BEGIN PV */
 //HTS221
 
-uint8_t HTTS221_CTR_REG_1_settings = (0b10000010);
+struct lcd_disp disp;
+
+uint8_t HTTS221_CTR_REG_1_settings = (0b10000110);
 uint8_t HTS221_WHOAMI_buf = 0;
-uint8_t  HTTS221_CTR_CALIBRATION_REG[6];
+uint8_t HTTS221_CTR_CALIBRATION_REG[6];
+uint8_t HTS221_Data_buff[4];
 
-int16_t HTTS221_H0_rH_x2_sett = 0;
-int16_t HTTS221_H1_rH_x2_sett = 0;
-int16_t HTTS221_H0_T0_OUT_sett = 0;
-int16_t HTTS221_H1_T0_OUT_sett = 0;
+//data to interpolation TEMP
+uint8_t HTTS221_T0_degC = 0;
+uint8_t HTTS221_T1_degC = 0;
+uint8_t HTTS221_T_MSB = 0;
+int16_t HTTS221_T0_OUT = 0;
+int16_t HTTS221_T1_OUT = 0;
+int16_t HTTS221_T_OUT = 0;
 
-uint8_t HTS221_Data_Temp[2];
-uint8_t HTS221_Data_Humi[2];
+//data to interpolation HUMI
+uint8_t HTTS221_H0_rH_x2 = 0;
+uint8_t HTTS221_H1_rH_x2 = 0;
+int16_t HTTS221_H0_T0_OUT = 0;
+int16_t HTTS221_H1_T0_OUT = 0;
+
+
+
+
+
 
 //LSM6DSL
 uint8_t LSM6DSL_CTRL1_XL=(0b01001110);
+uint8_t LSM6DSL_GYRRO_CTRL2_G_sett=(0b01001000);
 uint8_t LSM6DSL_WHOAMI_buf = 0;
-uint8_t LSM6DSL_DATA_BUFOR[50];
+int16_t LSM6DSL_DATA_BUFOR[3];
 
 /*
 uint8_t LSM6DSL_DATA_ACCEX_buff[2];
@@ -96,6 +112,8 @@ uint8_t LSM303AGR_DATA_ACCE_buff[6];
 
 uint8_t LPS22HB_WHOAMI_buf = 0;
 uint8_t LPS22HB_CTRL_REG1_A_settings = 0b00111000;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -152,6 +170,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  /*
+  	disp.addr = (0x27 << 1);
+    disp.bl = true;
+    lcd_init(&disp);
+*/
 
   //Read WHOAMI for HTS221 - temperature, humidity
       HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_ADR_WHO_AM_I,1, &HTS221_WHOAMI_buf, 1, 5);
@@ -165,8 +188,8 @@ int main(void)
       HAL_I2C_Mem_Read(&hi2c1, LPS22HB_ADR, LPS22HB_ADR_WHOAMI, 1, &LPS22HB_WHOAMI_buf, 1, 50);
 
     //LSM6DSL SET REGISTER
-      HAL_I2C_Mem_Write(&hi2c1, LSM6DSL_ADR, LSM6DSL_ADR_CTRL1_XL, 1, &LSM6DSL_CTRL1_XL, 1, 50);
-
+      HAL_I2C_Mem_Write(&hi2c1, LSM6DSL_ADR, LSM6DSL_ADR_CTRL1_XL, 1, &LSM6DSL_CTRL1_XL, 1, 5);
+      HAL_I2C_Mem_Write(&hi2c1, LSM6DSL_ADR, LSM6DSL_GYRRO_CTRL2_G, 1, &LSM6DSL_GYRRO_CTRL2_G_sett, 1, 5);
     //LSM303AGR SET REGISTER
       HAL_I2C_Mem_Write(&hi2c1, LSM303AGR_ADR_ACCE, LSM303AGR_TEMP_CFG_REG_A, 1, &LSM303AGR_TEMP_CFG_REG_A_settings, 1, 5); //ON TEMPERATURE
       HAL_I2C_Mem_Write(&hi2c1, LSM303AGR_ADR_ACCE, LSM303AGR_CTRL_REG2_A, 1, &LSM303AGR_CTRL_REG2_A_settings, 1, 5);
@@ -178,24 +201,46 @@ int main(void)
       HAL_I2C_Mem_Write(&hi2c1, LPS22HB_ADR, LPS22HB_LPS22HB_CTRL_REG1, 1, &LPS22HB_CTRL_REG1_A_settings, 1, 5);
 
      //HTS221 SET REGISTER
+
       HAL_I2C_Mem_Write(&hi2c1, HTS221_ADR, HTS221_CTR_REG_1, 1,  &HTTS221_CTR_REG_1_settings, 1, 5);
-     //HTS221 READ CONTROL DATA
-      HAL_I2C_Mem_Write(&hi2c1, HTS221_ADR, HTS221_H0_rH_x2, 1,  HTTS221_CTR_CALIBRATION_REG, 6, 5);
-      HTTS221_H0_rH_x2_sett = HTTS221_CTR_CALIBRATION_REG[0];
-      HTTS221_H1_rH_x2_sett = HTTS221_CTR_CALIBRATION_REG[1];
-      HTTS221_H0_T0_OUT_sett = (HTTS221_CTR_CALIBRATION_REG[3] << 8) + HTTS221_CTR_CALIBRATION_REG[2];
-      HTTS221_H1_T0_OUT_sett = (HTTS221_CTR_CALIBRATION_REG[5] << 8) + HTTS221_CTR_CALIBRATION_REG[4];
+     //HTS221 READ CONTROL DATA Interpolation TEMP
+		  HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_T0_degC_x8, 1, HTS221_Data_buff, 2, 5);
+		  HTTS221_T0_degC = HTS221_Data_buff[0];
+		  HTTS221_T1_degC = HTS221_Data_buff[1];
+		  HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_T1T0_MSB, 1, HTS221_Data_buff, 1, 5);
+		  HTTS221_T_MSB = HTS221_Data_buff[0];
+		  HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_TEMP_T0_OUT, 1,  HTS221_Data_buff, 4, 5);
+		  HTTS221_T0_OUT = (HTS221_Data_buff[1] << 8) + HTS221_Data_buff[0];
+		  HTTS221_T1_OUT = (HTS221_Data_buff[3] << 8) + HTS221_Data_buff[2];
+		  HTTS221_T0_degC = HTTS221_T0_degC / 8;
+		  HTTS221_T1_degC = HTTS221_T1_degC / 8;
+
+	 //HTS221 READ CONTROL DATA Interpolation HUMI
+		  HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_H0_rH_x2, 1, HTS221_Data_buff, 2, 5);
+		  HTTS221_H0_rH_x2 =  HTS221_Data_buff[0] / 2;
+		  HTTS221_H1_rH_x2 =  HTS221_Data_buff[1] / 2;
+
+		  HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_H0_T0_OUT, 1, HTS221_Data_buff, 2, 5);
+		  HTTS221_H0_T0_OUT = (HTS221_Data_buff[1] << 8) + HTS221_Data_buff[0];
+		  HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_H1_T0_OUT, 1, HTS221_Data_buff, 2, 5);
+		  HTTS221_H1_T0_OUT = (HTS221_Data_buff[1] << 8) + HTS221_Data_buff[0];
+
+//      HTTS221_H0_rH_x2_sett = HTTS221_CTR_CALIBRATION_REG[0];
+//      HTTS221_H1_rH_x2_sett = HTTS221_CTR_CALIBRATION_REG[1];
+//      HTTS221_H0_T0_OUT_sett = (HTTS221_CTR_CALIBRATION_REG[3] << 8) + HTTS221_CTR_CALIBRATION_REG[2];
+//      HTTS221_H1_T0_OUT_sett = (HTTS221_CTR_CALIBRATION_REG[5] << 8) + HTTS221_CTR_CALIBRATION_REG[4];
+
       //First Interrupt
       HAL_I2C_Mem_Read_IT(&hi2c1, LSM303AGR_ADR_ACCE, LSM303AGR_OUT_X_L_A, 1, LSM303AGR_DATA_ACCE_buff, 6);
 
       //START UART_DMA
-      uart_send_string_DMA((char*) LSM6DSL_DATA_BUFOR, 50);
-      //uart_send_string_DMA((char*) "HELLO", 50);
+      HAL_UART_Transmit_DMA(&huart2, (uint8_t*) LSM6DSL_DATA_BUFOR, 6);
+      //uart_send_string_DMA(LSM6DSL_DATA_BUFOR, 6); //test
+      //uart_send_string_DMA((char*) "HELLO", 50);   //test
 
 
   while (1)
   {
-
 	  HAL_GPIO_TogglePin(GPIOA, LED_GREEN_Pin);
 	  HAL_Delay(200);
     /* USER CODE END WHILE */
@@ -341,7 +386,7 @@ static void MX_USART2_UART_Init(void)
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.Mode = UART_MODE_TX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart2) != HAL_OK)

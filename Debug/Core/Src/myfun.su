@@ -1,0 +1,6 @@
+../Core/Src/myfun.c:95:6:uart_send_string_DMA	16	static
+../Core/Src/myfun.c:110:6:HAL_I2C_MemRxCpltCallback	32	static
+../Core/Src/myfun.c:188:9:hts221_compute_temp	32	static
+../Core/Src/myfun.c:201:9:hts221_compute_hummidity	32	static
+../Core/Src/myfun.c:214:9:lsm303agr_from_lsb_nm_to_celsius	16	static
+../Core/Src/myfun.c:219:9:scale_acce_8g	16	static

@@ -19,23 +19,35 @@
 
 
 //Header function
+float_t hts221_compute_hummidity(int16_t H_T_OUT, uint8_t H0_rH, uint8_t H1_rH, int16_t H0_T0_OUT, int16_t H1_T0_OUT);
 void uart_send_string_DMA(char* string, int16_t length);
+//void uart_send_num_DMA(int16_t* string, int16_t length);
 float_t lsm303agr_from_lsb_nm_to_celsius(int16_t lsb);
+float_t hts221_compute_temp(int16_t T_OUT, int16_t T0_OUT, int16_t T1_OUT, int16_t T0_degC, int16_t T1_degC);
+
+float_t scale_acce_8g(int16_t data);
 //HTS221
+#define HTS221_mask_read (0x80) // 1 MSB
 
 #define HTS221_ADR  (0b1011111 << 1)
 #define HTS221_ADR_WHO_AM_I (0x0F)
 #define HTS221_CTR_REG_1 (0x20) // adres bufora konfiguracyjnego
-#define HTS221_HUMIDITY_OUT_L (0x28)
-#define HTS221_HUMIDITY_OUT_H (0x29)
-#define HTS221_TEMP_OUT_L (0x2A)
-#define HTS221_TEMP_OUT_H (0x2B)
+#define HTS221_HUMIDITY_OUT_L (0x28 | HTS221_mask_read)
+#define HTS221_HUMIDITY_OUT_H (0x29 | HTS221_mask_read)
 
-//ADDRESS DATA INTERPOLATION
-#define HTS221_H0_rH_x2 (0x30)	//unsigned
-#define HTS221_H1_rH_x2 (0x31) //unsigned
-#define HTS221_H0_T0_OUT (0x36) // 16 bits signed
-#define HTS221_H1_T0_OUT (0x3A) // 16 bits signed
+//TEMP
+#define HTS221_TEMP_OUT_L (0x2A | HTS221_mask_read)
+#define HTS221_TEMP_OUT_H (0x2B | HTS221_mask_read)
+#define HTS221_T0_degC_x8  (0x32 | HTS221_mask_read) //u8
+#define HTS221_T1_degC_x8  (0x33 | HTS221_mask_read) //u8
+#define HTS221_T1T0_MSB   (0x35 | HTS221_mask_read) //T1.9 T1.8 T0.9 T0.8
+#define HTS221_TEMP_T0_OUT (0x3C| HTS221_mask_read ) //signed16
+
+//HUMMIDITY
+#define HTS221_H0_rH_x2 (0x30 | HTS221_mask_read)	//unsigned
+#define HTS221_H1_rH_x2 (0x31 | HTS221_mask_read) //unsigned
+#define HTS221_H0_T0_OUT (0x36 | HTS221_mask_read ) // 16 bits signed
+#define HTS221_H1_T0_OUT (0x3A | HTS221_mask_read) // 16 bits signed
 
 
 //LSM6DSL
@@ -43,6 +55,7 @@ float_t lsm303agr_from_lsb_nm_to_celsius(int16_t lsb);
 #define LSM6DSL_ADR (0b1101011 << 1)
 #define LSM6DSL_ADR_WHOAMI (0x0F)
 #define LSM6DSL_ADR_CTRL1_XL (0x10)
+#define LSM6DSL_GYRRO_CTRL2_G (0x11)
 
 
 #define LSM6DSL_OUT_TEMP_L (0x20) //0b00100000 Temperature
@@ -62,7 +75,8 @@ float_t lsm303agr_from_lsb_nm_to_celsius(int16_t lsb);
 #define LSM6DSL_OUTY_L_XL (0x2A) //0b00101010
 #define LSM6DSL_OUTY_H_XL (0x2B) //0b00101011
 #define LSM6DSL_OUTZ_L_XL (0x2C) //0b00101100
-#define LSM6DSL_OUTZ_H_XL (0x2D) //0b00101101
+//#define LSM6DSL_OUTZ_H_XL (0x2D) //0b00101101
+
 
 //LSM303AGR
 #define LSM303AGR_mask_read (0x80) // 1 MSB
@@ -85,11 +99,6 @@ float_t lsm303agr_from_lsb_nm_to_celsius(int16_t lsb);
 #define LSM303AGR_OUT_Y_H_A  (0x2B | LSM303AGR_mask_read) //(0b0101011)
 #define LSM303AGR_OUT_Z_L_A  (0x2C | LSM303AGR_mask_read) //(0b0101100)
 #define LSM303AGR_OUT_Z_H_A  (0x2D | LSM303AGR_mask_read) //(0b0101101)
-
-
-
-
-
 
 
 #define TEMP_CFG_REG_A_ADR (0x1F)
