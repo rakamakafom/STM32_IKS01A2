@@ -6,7 +6,7 @@
  */
 
 #include "myheader.h"
-#include "lcd_i2c.h"
+
 
 extern UART_HandleTypeDef huart2;
 extern I2C_HandleTypeDef hi2c1;
@@ -37,7 +37,7 @@ int16_t LSM303AGR_OUTZ_GYRRO_buf = 0;
 
 
 //LSM6DSL
-extern uint8_t UART_BUFFOR[50];
+extern uint8_t UART_BUFFOR[100];
 uint8_t LSM6DSL_DATA_ACCE_buff[6];
 
 int16_t LSM6DSL_OUTX_ACCE_buff = 0;
@@ -130,7 +130,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
 		LSM6DSL_OUTX_ACCE_in_g = scale_acce_8g(LSM6DSL_OUTX_ACCE_buff);
 		LSM6DSL_OUTY_ACCE_in_g = scale_acce_8g(LSM6DSL_OUTY_ACCE_buff);
 		LSM6DSL_OUTZ_ACCE_in_g = scale_acce_8g(LSM6DSL_OUTZ_ACCE_buff);
-		sprintf((char*) UART_BUFFOR, "FFF%6.4f %6.4f %6.4f \n\r", LSM6DSL_OUTX_ACCE_in_g, LSM6DSL_OUTX_ACCE_in_g, LSM6DSL_OUTX_ACCE_in_g);
+		//sprintf((char*) UART_BUFFOR, "FFF%6.4f %6.4f %6.4f\n\r", LSM6DSL_OUTX_ACCE_in_g, LSM6DSL_OUTY_ACCE_in_g, LSM6DSL_OUTZ_ACCE_in_g);
 		//LSM6DSL_DATA_BUFOR[0] = LSM6DSL_OUTX_ACCE_buff;
 		//LSM6DSL_DATA_BUFOR[1] = LSM6DSL_OUTY_ACCE_buff;
 		//LSM6DSL_DATA_BUFOR[2] = LSM6DSL_OUTZ_ACCE_buff;
@@ -169,15 +169,13 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
 		LSM6DSL_OUTY_GYRRO_in_ = scale_acce_8g(LSM6DSL_OUTY_GYRRO_buff);
 		LSM6DSL_OUTZ_GYRRO_in_ = scale_acce_8g(LSM6DSL_OUTZ_GYRRO_buff);
 		Call_Back_Flag = 6;
-				//sprintf((char *)disp.f_line, "To 1. linia");
-				//sprintf((char *)disp.s_line, "a to druga linia");
-				//lcd_display(&disp);
 		HAL_I2C_Mem_Read_IT(&hi2c1, HTS221_ADR, HTS221_HUMIDITY_OUT_L, 1, HTS221_DATA_buff, 2);
 			}
 
 	else if(Call_Back_Flag == 6){
 		HTS221_HUMI_DATA= ((HTS221_DATA_buff[1] << 8) + HTS221_DATA_buff[0]);
 		HTS221_HUMI_DATA_IN_PER = hts221_compute_hummidity(HTS221_HUMI_DATA, HTTS221_H0_rH_x2, HTTS221_H1_rH_x2,  HTTS221_H0_T0_OUT, HTTS221_H1_T0_OUT);
+		sprintf((char*) UART_BUFFOR, "FFF%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n\r",LSM6DSL_OUTX_ACCE_in_g, LSM6DSL_OUTY_ACCE_in_g, LSM6DSL_OUTZ_ACCE_in_g, LSM303AGR_OUTX_ACCE_in_g, LSM303AGR_OUTY_ACCE_in_g, LSM303AGR_OUTZ_ACCE_in_g, LPS22HB_OUT_PRESS_DATA_IN_HPA, LPS22HB_TEMP_DATA_IN_C, HTS221_HUMI_DATA_IN_PER);
 		Call_Back_Flag = 0;
 		HAL_I2C_Mem_Read_IT(&hi2c1, LSM303AGR_ADR_ACCE, LSM303AGR_OUT_X_L_A, 1, LSM303AGR_DATA_ACCE_buff, 6);
 		}

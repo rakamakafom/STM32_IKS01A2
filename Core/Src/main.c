@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "myheader.h"
-#include "lcd_i2c.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,11 +46,12 @@ RTC_HandleTypeDef hrtc;
 
 UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
+DMA_HandleTypeDef hdma_usart2_rx;
 
 /* USER CODE BEGIN PV */
 //HTS221
 
-struct lcd_disp disp;
+
 
 uint8_t HTTS221_CTR_REG_1_settings = (0b10000110);
 uint8_t HTS221_WHOAMI_buf = 0;
@@ -76,7 +77,7 @@ int16_t HTTS221_H1_T0_OUT = 0;
 uint8_t LSM6DSL_CTRL1_XL=(0b01001110);
 uint8_t LSM6DSL_GYRRO_CTRL2_G_sett=(0b01001000);
 uint8_t LSM6DSL_WHOAMI_buf = 0;
-uint8_t UART_BUFFOR[50];
+
 
 
 //LSM303AGR
@@ -97,7 +98,9 @@ uint8_t LSM303AGR_DATA_ACCE_buff[6];
 uint8_t LPS22HB_WHOAMI_buf = 0;
 uint8_t LPS22HB_CTRL_REG1_A_settings = 0b00111000;
 
-int8_t sizeuart = 0;
+uint8_t UART_BUFFOR[100];
+uint8_t UART_RECEIVE_BUFFOR = 0;
+
 
 /* USER CODE END PV */
 
@@ -155,11 +158,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  /*
-  	disp.addr = (0x27 << 1);
-    disp.bl = true;
-    lcd_init(&disp);
-*/
+
+
 
   //Read WHOAMI for HTS221 - temperature, humidity
       HAL_I2C_Mem_Read(&hi2c1, HTS221_ADR, HTS221_ADR_WHO_AM_I,1, &HTS221_WHOAMI_buf, 1, 5);
@@ -219,15 +219,15 @@ int main(void)
       HAL_I2C_Mem_Read_IT(&hi2c1, LSM303AGR_ADR_ACCE, LSM303AGR_OUT_X_L_A, 1, LSM303AGR_DATA_ACCE_buff, 6);
 
       //START UART_DMA
-      HAL_UART_Transmit_DMA(&huart2, (uint8_t*) UART_BUFFOR, 50);
+      HAL_UART_Transmit_DMA(&huart2, (uint8_t*) UART_BUFFOR, 70);
+      HAL_UART_Receive_DMA(&huart2, (uint8_t*) &UART_RECEIVE_BUFFOR, 1);
       //uart_send_string_DMA( (char*) UART_BUFFOR, 50); //test
       //uart_send_string_DMA((char*) "HELLO", 50);   //test
 
 
   while (1)
   {
-	  HAL_GPIO_TogglePin(GPIOA, LED_GREEN_Pin);
-	  HAL_Delay(200);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -371,7 +371,7 @@ static void MX_USART2_UART_Init(void)
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX;
+  huart2.Init.Mode = UART_MODE_TX_RX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart2) != HAL_OK)
@@ -394,6 +394,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);

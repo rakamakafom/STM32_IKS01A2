@@ -1,4 +1,3 @@
-"./Core/Src/lcd_i2c.o"
 "./Core/Src/main.o"
 "./Core/Src/myfun.o"
 "./Core/Src/stm32f4xx_hal_msp.o"

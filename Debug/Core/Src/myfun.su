@@ -1,6 +1,6 @@
 ../Core/Src/myfun.c:101:6:uart_send_string_DMA	16	static
-../Core/Src/myfun.c:112:6:HAL_I2C_MemRxCpltCallback	48	static
-../Core/Src/myfun.c:192:9:hts221_compute_temp	32	static
-../Core/Src/myfun.c:205:9:hts221_compute_hummidity	32	static
-../Core/Src/myfun.c:218:9:lsm303agr_from_lsb_nm_to_celsius	16	static
-../Core/Src/myfun.c:223:9:scale_acce_8g	16	static
+../Core/Src/myfun.c:112:6:HAL_I2C_MemRxCpltCallback	144	static
+../Core/Src/myfun.c:190:9:hts221_compute_temp	32	static
+../Core/Src/myfun.c:203:9:hts221_compute_hummidity	32	static
+../Core/Src/myfun.c:216:9:lsm303agr_from_lsb_nm_to_celsius	16	static
+../Core/Src/myfun.c:221:9:scale_acce_8g	16	static
